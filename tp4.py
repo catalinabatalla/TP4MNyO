@@ -4,27 +4,35 @@ def funcion_de_costo(A, b, x):
     c = A @ x - b 
     return c.T @ c
 
-def iterativo(A, b, x0, step, epsilon, max_iteraciones):
-    x = x0
-    c = funcion_de_costo(A, b, x)
-    iter = 0
-    while c > epsilon and max_iteraciones > iter:
-        x = x - step*(A.T @ (A @ x - b))
-        c = funcion_de_costo(A, b, x)
-        iter += 1
-    return x
+def gradiente_funcion_costo(A,x, b):
+    gradiente = 2 * A.T @ (A @ x - b)
+    return gradiente
 
 def regulizacion(F, gamma, x, A, b):
     norm_x = np.linalg.norm(x)**2
     F2 = F(A,b, x) + gamma*norm_x
     return F2
 
+def regularizacion_gradiente(gamma, x, A, b):
+    grad = gradiente_funcion_costo(A, x, b) + 2*gamma*x
+    return grad 
+
+def iterativo(A, b, x0, step, epsilon, max_iteraciones):
+    x = x0
+    grad = gradiente_funcion_costo(A, x, b)
+    iter = 0
+    while grad > epsilon and max_iteraciones > iter:
+        x = x - step*(A.T @ (A @ x - b))
+        grad = gradiente_funcion_costo(A, x, b)
+        iter += 1
+    return x
+
 def valor_sing_max(A):
     U, S, Vt = np.linalg.svd(A)
     return S[0]
 
 def autovalor_max(A):
-    Hessiana = A.T @ A
+    Hessiana = 2* A.T @ A
     lambda_max = np.linalg.eigvals(Hessiana).max()
     return lambda_max
 
@@ -39,15 +47,7 @@ def main():
     epsilon = 10**(-6)
     max_iteraciones = 1000
 
-    #minimizo la funcion de costo
-    x_F = iterativo(A, b, x0, s, epsilon, max_iteraciones)
-    costo_F = funcion_de_costo(A, b, x_F)
-
-    #minimizo la funcion de costo regularizada
-    x_F2 = iterativo(A, b, x0, s, epsilon, max_iteraciones)
-    costo_F2 = regulizacion(funcion_de_costo, gamma, x_F2, A, b)
-
-    x_svd = np.linalg.pinv(A) @ b
+    #hacer que sea iterativo
 
 
 
