@@ -43,6 +43,17 @@ def autovalor_max(A):
     lambda_max = np.linalg.eigvals(Hessiana).max()
     return lambda_max
 
+def svd_vs(A, b):
+    U, S, Vt = np.linalg.svd(A, full_matrices=False)
+    #x = V S^(-1) Ut b 
+    x_svd = Vt.T @ np.linalg.inv(np.diag(S)) @ U.T @ b
+    return x_svd
+
+def reducir_dim(A, d):
+    U, S, Vt = np.linalg.svd(A, full_matrices=False)
+    A_2D = U[:, :d] @ np.diag(S[:d]) @ Vt[:d, :]
+    return A_2D
+
 def main():
     n = 5
     d = 100
@@ -106,6 +117,36 @@ def main():
     plt.legend()
     plt.title("Evolución del error en las aproximaciones")
     plt.show()
+
+    # GRAFICO 4: COMPARACION CON SVD
+    # Solución mediante SVD
+    x_SVD = svd_vs(A, b)
+
+    # Reducción de dimensionalidad
+    A_2D = reducir_dim(A, 2)
+    
+    # Graficar los datos y la aproximación por SVD
+    plt.figure(figsize=(10, 6))
+    plt.scatter(A_2D[:, 0], A_2D[:, 1], label='Datos', color='blue', alpha=0.5)
+
+    # Calcular la pendiente y ordenada al origen para la línea de regresión
+    slope = -x_SVD[0] / x_SVD[1]
+    intercept = 0  # Asumiendo que la línea de regresión pasa por el origen en este ejemplo
+    
+    # Definir puntos para trazar la línea de regresión
+    x_line = np.linspace(np.min(A_2D[:, 0]), np.max(A_2D[:, 0]), 100)
+    y_line = slope * x_line + intercept
+    
+    # Graficar la línea de regresión
+    plt.plot(x_line, y_line, label='Línea de Regresión SVD', color='orange', linewidth=2)
+    
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Aproximación de los datos comparando con SVD')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
 
 
 if __name__ == "__main__":
