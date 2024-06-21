@@ -43,16 +43,25 @@ def autovalor_max(A):
     lambda_max = np.linalg.eigvals(Hessiana).max()
     return lambda_max
 
-def svd_vs(A, b):
-    U, S, Vt = np.linalg.svd(A, full_matrices=False)
-    #x = V S^(-1) Ut b 
-    x_svd = Vt.T @ np.linalg.inv(np.diag(S)) @ U.T @ b
-    return x_svd
+def pca_manual(A, n_components):
+    U, S, Vt = np.linalg.svd(A)
+    U_k = U[:, :n_components]
+    S_k = S[:n_components]
+    Vt_k = Vt[:n_components, :]
+    A_reduced = U_k @ np.diag(S_k) 
+    return A_reduced, U_k, S_k, Vt_k
 
-def reducir_dim(A, d):
-    U, S, Vt = np.linalg.svd(A, full_matrices=False)
-    A_2D = U[:, :d] @ np.diag(S[:d]) @ Vt[:d, :]
-    return A_2D
+def pseudo_inverse(S):
+    S_inv = np.zeros_like(S)
+    for i in range(len(S)):
+        if S[i] != 0:
+            S_inv[i] = 1 / S[i]
+    return np.diag(S_inv)
+
+def calcular_x(U, S, Vt, b):
+    S_inv = pseudo_inverse(S)
+    beta = Vt.T @ S_inv @ U.T @ b
+    return beta
 
 def main():
     n = 5
@@ -61,9 +70,10 @@ def main():
     b = np.random.rand(n)
     delta = 10**(-2) * valor_sing_max(A)
     s = 1/autovalor_max(A)
-    x0 = np.random.rand(d)
+    # x0 = np.random.rand(d)
+    x0 = np.random.uniform(0, 1, d)
     epsilon = 10**(-6)
-    max_iteraciones = 1000
+    max_iteraciones = 6000
 
     # Minimización F1
     x_F, iteraciones_F, valores_F = iterativo(A, x0, b, s, gradiente_funcion_costo, epsilon, max_iteraciones)
@@ -72,22 +82,33 @@ def main():
     # Minimización F2
     x_F2, iteraciones_F2, valores_F2 = iterativo(A, x0, b, s, lambda A, x, b: gradiente_funcion_regularizacion(A, x, b, delta), epsilon, max_iteraciones)
     valores_F2_costo = [funcion_regularizacion(A, x, b, funcion_de_costo, delta) for x in valores_F2]
+
+    # Minimización con SVD
+
+    # A_reduced, U_k, S_k, Vt_k = pca_manual(A, 2)
+    U, S, Vt = np.linalg.svd(A, full_matrices=False)
+    x_approx = calcular_x(U, S, Vt, b)
+    print(x_approx)
+    valores_F_costo_SVD = funcion_de_costo(A, x_approx, b) 
+    print(f'el valor de la funcion de costo con la aproximacion usando SVD es {valores_F_costo_SVD}')
     
     # GRÁFICO 1: CONVERGENCIA DE LAS SOLUCIONES 
 
-    print("Solución minimizando F:")
-    print(x_F)
-    print("Solución minimizando F2:")
-    print(x_F2)
+    # print("Solución minimizando F:")
+    # print(x_F)
+    # print("Solución minimizando F2:")
+    # print(x_F2)
 
-    plt.plot(iteraciones_F, valores_F_costo, label="F")
-    plt.plot(iteraciones_F2, valores_F2_costo, label="F2", color="orange")
-    plt.axhline(0, color='grey', linestyle='--', label="F = 0")
+    plt.yscale("log")
+    # plt.plot(iteraciones_F, valores_F_costo, label="Aproximación con gradiente descendiente")
+    plt.plot(valores_F2_costo, label="F2", color="orange")
+    # plt.axhline(valores_F_costo_SVD, color='green', linestyle='--', label="Aproximación con SVD")
+    # plt.axhline(0, color='grey', label="F = 0")
     plt.axhline(delta * np.linalg.norm(x_F2)**2, color='red', linestyle='--', label=r"$\delta \|x\|^2$")
-    plt.xlabel("Iteraciones")
-    plt.ylabel("Valor de la función de costo")
-    plt.legend()
-    plt.title("Evolución de la función de costo")
+    plt.xlabel("Número de iteración", fontsize=25)
+    plt.ylabel("Valor de la función de costo", fontsize=25)
+    plt.legend(fontsize=20)
+    #plt.title("Evolución de la función de costo")
     plt.show()
 
     # GRAFICO 2: NORMA DE X EN FUNCION DE LAS ITERACIONES 
@@ -117,37 +138,6 @@ def main():
     plt.legend()
     plt.title("Evolución del error en las aproximaciones")
     plt.show()
-
-    # GRAFICO 4: COMPARACION CON SVD
-    # Solución mediante SVD
-    x_SVD = svd_vs(A, b)
-
-    # Reducción de dimensionalidad
-    A_2D = reducir_dim(A, 2)
-    
-    # Graficar los datos y la aproximación por SVD
-    plt.figure(figsize=(10, 6))
-    plt.scatter(A_2D[:, 0], A_2D[:, 1], label='Datos', color='blue', alpha=0.5)
-
-    # Calcular la pendiente y ordenada al origen para la línea de regresión
-    slope = -x_SVD[0] / x_SVD[1]
-    intercept = 0  # Asumiendo que la línea de regresión pasa por el origen en este ejemplo
-    
-    # Definir puntos para trazar la línea de regresión
-    x_line = np.linspace(np.min(A_2D[:, 0]), np.max(A_2D[:, 0]), 100)
-    y_line = slope * x_line + intercept
-    
-    # Graficar la línea de regresión
-    plt.plot(x_line, y_line, label='Línea de Regresión SVD', color='orange', linewidth=2)
-    
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('Aproximación de los datos comparando con SVD')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
 
 if __name__ == "__main__":
     main()
