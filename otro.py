@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 np.random.seed(1428)
 
@@ -67,35 +68,101 @@ def calcular_x(U, S, Vt, b):
     beta = Vt.T @ S_inv @ U.T @ b
     return beta
 
-def grafico_comparacion(x_F, x_F2, d):
+def grafico_comparacion(x_F, x_F2, d, x_svd):
     plt.figure(figsize=(10, 6))
+    plt.scatter(range(d), x_svd, label='SVD', color='gold', marker='o')
     plt.scatter(range(d), x_F, label='F', color='plum', marker='s')
     plt.scatter(range(d), x_F2, label='F2', color='chartreuse', marker='^')
-    plt.xlabel('Índice', fontsize=14)
-    plt.ylabel('Valor de x', fontsize=14)
-    plt.title('Comparación de soluciones por SVD y L2', fontsize=16)
-    plt.legend(fontsize=15)
+    plt.xlabel('Índice', fontsize=20)
+    plt.ylabel('Valor de x', fontsize=20)
+    plt.title('Comparación de las soluciones de F, F2, SVD', fontsize=20)
+    plt.legend(fontsize=20)
+    plt.yticks(fontsize = 18)
+    plt.xticks(fontsize = 18)
     plt.grid(True)
     plt.show()
 
-def grafico_diferentes_delta(deltas, x_F, d):
+def grafico_diferentes_delta(x_F, b):
     plt.figure(figsize=(10, 6))
 
-    labels = [r'$\delta^2 = 10^{-2}\sigma_{max}$', r'$\delta^2 = 10^{-2}\sigma_{min}$', r'$\delta^2 = 0$', r'$\delta^2 = 25$', r'$\delta^2 = 100$']
+    labels = [r'$\delta^2 = 10^{-2}\sigma_{max}$', r'$\delta^2 = 10^{-2}\sigma_{min}$', r'$\delta^2 = 0$', r'$\delta^2 = 5$', r'$\delta^2 = 25$', r'$\delta^2 = 100$']
 
     for idx, x in enumerate(x_F):
         plt.plot(x, label=f'{labels[idx]}')
+    n = np.linspace(0, len(b), len(b))
     plt.yscale("log")
     plt.xscale("log")
-    plt.xlabel('Iteraciones', fontsize=14)
-    plt.ylabel('Valor de F2', fontsize=14)
-    plt.title('Evolución de F2 con diferentes valores de $\delta$', fontsize=16)
-    plt.legend(fontsize=15)
+    plt.xlabel('Iteraciones', fontsize=20)
+    plt.ylabel('Valor de F2', fontsize=20)
+    plt.xlim(10**(-1), 10**3.7)
+    plt.ylim(10**(-6.5), 10**3.5)
+    plt.title('Evolución de F2 con diferentes valores de $\delta$', fontsize=20)
+    plt.legend(fontsize=20)
+    plt.yticks(fontsize = 18)
+    plt.xticks(fontsize = 18)
+    plt.grid(True)
+    plt.show()
+
+def grafico_errores_delta(errores_delta):
+    labels = [r'$\delta^2 = 10^{-2}\sigma_{max}$', r'$\delta^2 = 10^{-2}\sigma_{min}$', r'$\delta^2 = 0$', r'$\delta^2 = 5$', r'$\delta^2 = 25$', r'$\delta^2 = 100$']
+    colors = ['mediumpurple', 'cornflowerblue', 'palegreen', 'greenyellow', 'coral', 'tomato']
+    errores_porcentuales = {key: value * 100 for key, value in errores_delta.items()}
+    plt.figure(figsize=(10, 6))
+    bars = plt.bar(labels, errores_porcentuales.values(), color=colors)
+    
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2.0, height, f'{height:.2f}%', ha='center', va='bottom', fontsize=12)
+    
+    plt.xlabel('Valores de $\delta$', fontsize=20)
+    plt.ylabel('Errores relativos', fontsize=20)
+    plt.title('Error relativo entre SVD y F2 en función de $\delta$', fontsize=20)
+    plt.yticks(fontsize = 18)
+    plt.xticks(fontsize = 18)
+    plt.grid(True)
+    plt.show()
+
+
+
+def grafico_diferentes_steps(lista_steps):
+    plt.figure(figsize=(10, 6))
+
+    labels = [r'$s = 1/\lambda_{max}$', r'$s = 0.001$', r'$s = 0.0004$', r'$s = 0.005$']
+
+    for idx, x in enumerate(lista_steps):
+        plt.plot(x, label=f'{labels[idx]}')
+    plt.yscale("log")
+    plt.xscale("log")
+    plt.xlabel('Iteraciones', fontsize=20)
+    plt.ylabel('Valor de F2', fontsize=20)
+    plt.title('Evolución de F2 con diferentes valores de $s$', fontsize=20)
+    plt.xlim(10**(-1), 10**3.7)
+    plt.ylim(10**(-3), 10**5)
+    plt.yticks(fontsize = 18)
+    plt.xticks(fontsize = 18)
+    plt.legend(fontsize=20)
+    plt.grid(True)
+    plt.show()
+
+def grafico_errores_step(errores_step):
+    labels = [r'$s = 1/\lambda_{max}$', r'$s = 0.001$', r'$s = 0.0004$', r'$s = 0.005$']
+    colors = ['mediumpurple', 'palegreen', 'greenyellow', 'coral']
+    errores_porcentuales = {key: value * 100 for key, value in errores_step.items()}
+    plt.figure(figsize=(10, 6))
+    bars = plt.bar(labels, errores_porcentuales.values(), color=colors)
+    
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2.0, height, f'{height:.2f}%', ha='center', va='bottom', fontsize=12)
+    
+    plt.xlabel('Valores de $s$', fontsize=20)
+    plt.ylabel('Errores relativos', fontsize=20)
+    plt.title('Error relativo entre SVD y F2 en función de $s (step)$', fontsize=20)
+    plt.yticks(fontsize = 18)
+    plt.xticks(fontsize = 18)
     plt.grid(True)
     plt.show()
     
-
-
 
 def main():
     n = 5
@@ -119,17 +186,39 @@ def main():
     # Minimización con SVD
     U, S, Vt = np.linalg.svd(A, full_matrices=False)
     x_svd = calcular_x(U, S, Vt, b)
-    
-    grafico_comparacion(x_F, x_F2, d)
+    grafico_comparacion(x_F, x_F2, d, x_svd)
 
-    deltas = []
     lista = []
-    delta_lista = [10**(-2) * valor_sing_max(A), 10**(-2) * valor_sing_min(A), 0, 25, 100]
+    delta_lista = [10**(-2) * valor_sing_max(A), 10**(-2) * valor_sing_min(A), 0, 5, 25, 100]
     for sub_delta in delta_lista:
         x_F2, iteraciones_F2, valores_F2 = iterativo(A, x0, b, s, lambda A, x, b: gradiente_funcion_regularizacion(A, x, b, sub_delta), epsilon, max_iteraciones)
         valores_F2_costo = [funcion_regularizacion(A, x, b, funcion_de_costo, sub_delta) for x in valores_F2]
         lista.append(valores_F2_costo)
-    grafico_diferentes_delta(deltas, lista, d)
+    grafico_diferentes_delta(lista, b)
+
+    errores_delta = {}
+    for idx, sub_delta in enumerate(delta_lista):
+        x_F2, iteraciones_F2, valores_F2 = iterativo(A, x0, b, s, lambda A, x, b: gradiente_funcion_regularizacion(A, x, b, sub_delta), epsilon, max_iteraciones)
+        error = np.linalg.norm(x_svd - x_F2)/np.linalg.norm(x_svd)
+        errores_delta[sub_delta] = error
+    grafico_errores_delta(errores_delta)
+
+    lista_steps = []
+    steps = [s, 0.001, 0.0004, 0.005]
+    for step in steps:
+        x_F2, iteraciones_F2, valores_F2 = iterativo(A, x0, b, step, lambda A, x, b: gradiente_funcion_regularizacion(A, x, b, delta), epsilon, max_iteraciones)
+        valores_F2_costo = [funcion_regularizacion(A, x, b, funcion_de_costo, delta) for x in valores_F2]
+        lista_steps.append(valores_F2_costo)
+    grafico_diferentes_steps(lista_steps)
+
+    errores_step = {}
+    for idx, step in enumerate(steps):
+        x_F2, iteraciones_F2, valores_F2 = iterativo(A, x0, b, step, lambda A, x, b: gradiente_funcion_regularizacion(A, x, b, delta), epsilon, max_iteraciones)
+        error = np.linalg.norm(x_svd - x_F2)/np.linalg.norm(x_svd)
+        errores_step[step] = error
+    grafico_errores_step(errores_step)
+
+
 
 if __name__ == "__main__":
     main()
