@@ -85,7 +85,7 @@ def main():
 
     # Minimización con SVD
 
-    # A_reduced, U_k, S_k, Vt_k = pca_manual(A, 2)
+    # A_reduced U_k, S_k, Vt_k = pca_manual(A, 2)
     U, S, Vt = np.linalg.svd(A, full_matrices=False)
     x_approx = calcular_x(U, S, Vt, b)
     print(x_approx)
