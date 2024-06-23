@@ -25,7 +25,7 @@ def iterativo(A, x0, b, step, gradiente_func, epsilon, max_iteraciones):
     x = x0
     iteraciones = []
     valores = []
-    for iter in range(max_iteraciones):
+    for iter in range(1, max_iteraciones):
         grad = gradiente_func(A, x, b)
         x = x - step * grad
         iteraciones.append(iter)
@@ -73,7 +73,7 @@ def main():
     # x0 = np.random.rand(d)
     x0 = np.random.uniform(0, 1, d)
     epsilon = 10**(-6)
-    max_iteraciones = 6000
+    max_iteraciones = 1000
 
     # Minimización F1
     x_F, iteraciones_F, valores_F = iterativo(A, x0, b, s, gradiente_funcion_costo, epsilon, max_iteraciones)
@@ -83,8 +83,10 @@ def main():
     x_F2, iteraciones_F2, valores_F2 = iterativo(A, x0, b, s, lambda A, x, b: gradiente_funcion_regularizacion(A, x, b, delta), epsilon, max_iteraciones)
     valores_F2_costo = [funcion_regularizacion(A, x, b, funcion_de_costo, delta) for x in valores_F2]
 
-    # Minimización con SVD
+    # Minimización F1 con x generados por F2
+    valores_F1_con_F2 = [funcion_de_costo(A, x, b) for x in valores_F2]
 
+    # Minimización con SVD
     # A_reduced U_k, S_k, Vt_k = pca_manual(A, 2)
     U, S, Vt = np.linalg.svd(A, full_matrices=False)
     x_approx = calcular_x(U, S, Vt, b)
@@ -100,11 +102,11 @@ def main():
     # print(x_F2)
 
     plt.yscale("log")
-    # plt.plot(iteraciones_F, valores_F_costo, label="Aproximación con gradiente descendiente")
-    plt.plot(valores_F2_costo, label="F2", color="orange")
-    # plt.axhline(valores_F_costo_SVD, color='green', linestyle='--', label="Aproximación con SVD")
-    # plt.axhline(0, color='grey', label="F = 0")
-    plt.axhline(delta * np.linalg.norm(x_F2)**2, color='red', linestyle='--', label=r"$\delta \|x\|^2$")
+    plt.plot(iteraciones_F, valores_F_costo, lw=2, label=r"Minimización de $F(x)$")
+    plt.plot(iteraciones_F2, valores_F2_costo, lw=2, label=r"Minimización de $F_2(x)$", color="orange")
+    # plt.plot(iteraciones_F2, valores_F1_con_F2, label="F1 con penalizacion")
+    plt.axhline(valores_F_costo_SVD, color='green', linestyle='--', lw=3, label="Aproximación con SVD")
+    plt.axhline(delta * np.linalg.norm(x_F2)**2, color='red', lw=3, linestyle='--', label=r"$\delta \|x\|^2$")
     plt.xlabel("Número de iteración", fontsize=25)
     plt.ylabel("Valor de la función de costo", fontsize=25)
     plt.legend(fontsize=20)
@@ -117,12 +119,25 @@ def main():
     norm_x_F2 = [np.linalg.norm(x) for x in valores_F2]
 
     plt.figure()
-    plt.plot(iteraciones_F, norm_x_F, label="Norma 2 de x (F)")
-    plt.plot(iteraciones_F2, norm_x_F2, label="Norma 2 de x (F2)", color="orange")
-    plt.xlabel("Iteraciones")
-    plt.ylabel("Norma 2 de x")
-    plt.legend()
-    plt.title("Evolución de la norma 2 de x")
+    plt.plot(iteraciones_F, norm_x_F, label=r"Norma 2 de x con $F(x)$")
+    plt.plot(iteraciones_F2, norm_x_F2, label=r"Norma 2 de x con $F_2(x)$)", color="orange")
+    plt.axhline(np.linalg.norm(x_approx), color='green', linestyle='--', lw=3, label=r"Norma 2 de x con SVD")
+    plt.xlabel("Iteraciones", fontsize=30)
+    plt.ylabel("Norma 2 de x", fontsize=30)
+    plt.legend(fontsize=20)
+    plt.show()
+
+    # GRAFICO 2.1: ERRORES RELATIVOS
+
+    erroresF1 = [np.linalg.norm(x - x_approx)/np.linalg.norm(x_approx) for x in valores_F]
+    erroresF2 = [np.linalg.norm(x - x_approx)/np.linalg.norm(x_approx) for x in valores_F2]
+
+    plt.figure()
+    plt.plot(iteraciones_F, erroresF1, label=r"Error relativo de minimizar $F(x)$")
+    plt.plot(iteraciones_F2, erroresF2, label=r"Error relativo de minimizar $F_2(x)$")
+    plt.xlabel("Iteraciones", fontsize=30)
+    plt.ylabel("Error relativo", fontsize=30)
+    plt.legend(fontsize=20)
     plt.show()
 
     # GRAFICO 3: ERROR COMETIDO EN LAS APROXIMACIONES
